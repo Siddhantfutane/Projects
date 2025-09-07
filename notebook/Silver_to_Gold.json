@@ -1,0 +1,78 @@
+{
+	"name": "Silver_to_Gold",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "cluster1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "bdd775b1-eaf0-40e7-9372-dd9c70c32920"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/d68a41c1-43a8-42b9-a1de-9cda294eddae/resourceGroups/azurelib/providers/Microsoft.Synapse/workspaces/siddhant-synapse/bigDataPools/cluster1",
+				"name": "cluster1",
+				"type": "Spark",
+				"endpoint": "https://siddhant-synapse.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/cluster1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.4",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "python"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%pyspark\n",
+					"dfAddress = spark.read.load('abfss://landing@siddhant2607adls.dfs.core.windows.net/Project/Synapse_Silver/Address/Saleslt.Address/', format='parquet')\n",
+					"dfCustomerAddress = spark.read.load('abfss://landing@siddhant2607adls.dfs.core.windows.net/Project/Synapse_Silver/CustomerAddress/Saleslt.CustomerAddress/', format='parquet')\n",
+					"dfCustomer = spark.read.load('abfss://landing@siddhant2607adls.dfs.core.windows.net/Project/Synapse_Silver/Customer/Saleslt.Customer/', format='parquet')\n",
+					"##display(dfCustomer.limit(10))\n",
+					"dfCustomer = dfCustomer.withColumnRenamed(\"ModifiedDate\", \"Customer_ModifiedDate\")\n",
+					"dfAddress  = dfAddress.withColumnRenamed(\"ModifiedDate\", \"Address_ModifiedDate\")\n",
+					"dfCustomer = dfCustomer.withColumnRenamed(\"rowguid\", \"Customer_rowguid\")\n",
+					"dfAddress  = dfAddress.withColumnRenamed(\"rowguid\", \"Address_rowguid\")\n",
+					"##display(dfCustomerAddress.limit(10))\n",
+					"##display(dfAddress.limit(10))\n",
+					"dfjoin= dfAddress.join(dfCustomerAddress, on=\"AddressID\",how=\"full\" )\n",
+					"dfjoin2=dfCustomer.join(dfCustomerAddress, on=\"CustomerID\", how=\"full\")\n",
+					"display(dfjoin2.limit(100))\n",
+					"dfjoin2.write.mode(\"overwrite\").save('abfss://landing@siddhant2607adls.dfs.core.windows.net/Project/Synapse_Gold/Customer/Saleslt.Customer')"
+				],
+				"execution_count": 2
+			}
+		]
+	}
+}
